@@ -140,8 +140,8 @@ def _prepare_data(
             if pod.current_node != node.id:
                 row.append(
                     0.5 * pod.priority
-                    + pod.mem_usage * 0.00001
-                    + pod.cpu_usage * 0.0001
+                    + pod.mem_usage * 0.001
+                    + pod.cpu_usage * 0.01
                 )  # 基本移動コスト
                 continue
 

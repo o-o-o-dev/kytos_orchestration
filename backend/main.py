@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -42,8 +42,47 @@ def optimize(request: OptimizationRequest):
     """
     クラスタの状態を受け取り、ポッドの最適配置を計算して返す。
     新規配置したいポッドは、current_nodeをNoneにする。
+
+    ```
+    {
+        state: {
+            nodes: {
+                id: str,
+                cpu_capacity: float,
+                mem_capacity: float,
+                cpu_usage?: float = 0,
+                mem_usage?: float = 0,
+            }[],
+            pods: {
+                id: str,
+                cpu_usage: float,
+                mem_usage: float,
+                current_node?: str | null,
+                service?: str | null,
+                priority?: float = 1,
+            }[],
+            services: {
+                id: str,
+                load_balancer_pod: str,
+                auto_scaling_enabled?: bool = false,
+                min_replicas?: int = 1,
+                max_replicas?: int | null,
+                current_request_rate?: float = 0.0,
+                target_request_rate_per_pod?: float = 100.0,
+                priority?: float = 10,
+            }[]
+        },
+        settings?: {
+            load_balance_weight?: float = 5.0,
+            move_cost_weight?: float = 1.0,
+            anti_affinity_weight?: float = 5.0,
+            desire_weight?: float = 10.0,
+            cpu_limit_weight?: float = 1.0,
+            mem_limit_weight?: float = 1.0,
+            one_hot_relaxed_weight?: float = 20.0,
+            num_reads?: int = 100,
+        }
+    }
+    ```
     """
-    try:
-        return solve_placement(request.state, request.settings)
-    except HTTPException as e:
-        return e
+    return solve_placement(request.state, request.settings)

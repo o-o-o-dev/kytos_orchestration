@@ -15,15 +15,15 @@ class ServiceProfile(BaseModel):
     max_replicas: Optional[int] = None
     current_request_rate: float = 0.0
     target_request_rate_per_pod: float = 100.0
-    priority: int = 10  # Higher is more important
+    priority: float = 10  # Higher is more important
 
 
 class Node(BaseModel):
     id: str
-    cpu_capacity: int  # in milliCPU
-    mem_capacity: int  # in MiB
-    cpu_usage: int = 0  # in milliCPU
-    mem_usage: int = 0  # in MiB
+    cpu_capacity: float  # in milliCPU
+    mem_capacity: float  # in MiB
+    cpu_usage: float = 0  # in milliCPU
+    mem_usage: float = 0  # in MiB
 
 
 class Pod(BaseModel):
@@ -32,7 +32,7 @@ class Pod(BaseModel):
     mem_usage: float  # in MiB
     current_node: Optional[str] = None
     service: Optional[str] = None  # Link to ServiceProfile
-    priority: int = 1  # Higher is more important (Used if service_name is not found)
+    priority: float = 1  # Higher is more important (Used if service_name is not found)
 
 
 class ClusterState(BaseModel):
