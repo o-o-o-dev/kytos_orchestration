@@ -44,18 +44,22 @@
 
 ## 定式化
 
-$$\begin{array}{cccc}\text{Problem:} & \text{Kytos Orchestration} & & \\& & \min \quad \displaystyle \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} \left(\left(\sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot cpu_req_{p} \cdot cpu_cap_{n}^{(-1)}\right)^{2} + \left(\sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot mem_req_{p} \cdot mem_cap_{n}^{(-1)}\right)^{2}\right) \cdot load_balance_weight + \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} x_{p, n} \cdot move_cost_{p, n} \cdot move_cost_weight + \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} anti_affinity_{p, p} \cdot x_{p, n} \cdot x_{p, n} \cdot anti_affinity_weight + \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} - desire_{p} \cdot \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} x_{p, n} \cdot desire_weight & \\\text{{s.t.}} & & & \\ & \text{cpu\_limit} & \displaystyle \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot cpu_req_{p} \leq cpu_cap_{n} & \forall n \in \left\{0,\ldots,\mathrm{len}\left(pods, 1\right) - 1\right\} \\ & \text{mem\_limit} & \displaystyle \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot mem_req_{p} \leq mem_cap_{n} & \forall n \in \left\{0,\ldots,\mathrm{len}\left(pods, 1\right) - 1\right\} \\ & \text{one\_hot\_relaxed} & \displaystyle \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} x_{p, n} \leq 1 & \forall p \in \left\{0,\ldots,\mathrm{len}\left(pods, 0\right) - 1\right\} \\\text{{where}} & & & \\& x & 2\text{-dim binary variable}& \text{PodのNode割り当て}\\\end{array}$$
+$$
+\begin{array}{cccc}
+\text{Problem:} & \text{Kytos Orchestration} & & \\& & \min \quad \displaystyle \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} \left(\left(\sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot cpu_req_{p} \cdot cpu_cap_{n}^{(-1)}\right)^{2} + \left(\sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot mem_req_{p} \cdot mem_cap_{n}^{(-1)}\right)^{2}\right) \cdot load_balance_weight + \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} x_{p, n} \cdot move_cost_{p, n} \cdot move_cost_weight + \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} anti_affinity_{p, p} \cdot x_{p, n} \cdot x_{p, n} \cdot anti_affinity_weight + \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} - desire_{p} \cdot \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} x_{p, n} \cdot desire_weight & \\\text{{s.t.}} & & & \\ & \text{cpu\_limit} & \displaystyle \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot cpu_req_{p} \leq cpu_cap_{n} & \forall n \in \left\{0,\ldots,\mathrm{len}\left(pods, 1\right) - 1\right\} \\ & \text{mem\_limit} & \displaystyle \sum_{p = 0}^{\mathrm{len}\left(pods, 0\right) - 1} x_{p, n} \cdot mem_req_{p} \leq mem_cap_{n} & \forall n \in \left\{0,\ldots,\mathrm{len}\left(pods, 1\right) - 1\right\} \\ & \text{one\_hot\_relaxed} & \displaystyle \sum_{n = 0}^{\mathrm{len}\left(pods, 1\right) - 1} x_{p, n} \leq 1 & \forall p \in \left\{0,\ldots,\mathrm{len}\left(pods, 0\right) - 1\right\} \\\text{{where}} & & & \\& x & 2\text{-dim binary variable}& \text{PodのNode割り当て}\\
+\end{array}
+$$
 
 ## 3. システムアーキテクチャ (Architecture)
 
 ```mermaid
 graph LR
-    User[User / K8s Event] -->|Request| API[Kytos API (FastAPI)]
-    API -->|Input Data| Solver[Annealing Solver]
-    Solver -->|QUBO Formulation| QA[Quantum/Digital Annealer]
+    User["User / K8s Event"] -->|Request| API["Kytos API<br/>(FastAPI)"]
+    API -->|Input Data| Solver["Annealing Solver"]
+    Solver -->|QUBO Formulation| QA["Quantum/Digital Annealer"]
     QA -->|Optimal State| Solver
     Solver -->|JSON Response| API
-    API -->|Action| K8s[Kubernetes Cluster]
+    API -->|Action| K8s["Kubernetes Cluster"]
 ```
 
 * **API Layer:** FastAPI (Python)
@@ -83,29 +87,12 @@ graph LR
 
 ### Endpoints
 
-#### `POST /optimize/rebalance`
+#### `POST /optimize`
 
   * **Input:** 全ノードと全Podの状態。
   * **Logic:** 全Podを再配置対象として計算するが、`current_node` と異なる配置になった場合、移動コスト項を加算する。
   * **Output:** 移動すべきPodとその移動先ノードのリスト。
 
-#### `POST /optimize/recovery`
-
-  * **Input:** 生存ノードのリスト、退避が必要な（死んだノードにいた）Podリスト。
-  * **Logic:** PodごとのPriorityを重み付けし、絶対に配置できないPod（容量オーバー）が出た場合はPriorityの低いものを切り捨てる判断を行う。
-  * **Output:** 退避Podごとの新しい配置先。
-
-#### `POST /optimize/placement`
-
-  * **Input:** 新規作成予定のPodスペック、現在のノード状態。
-  * **Logic:** 新規Podを入れた後のシステム全体のエネルギー（負荷分散など）が最も低くなるノードを選択。
-  * **Output:** 対象Podの推奨ノードID。
-
-#### `POST /optimize/auto_scale`
-
-  * **Input:** クラスタ状態（Nodes, Pods）およびサービス定義（Services）。
-  * **Logic:** 各サービスの現在のリクエストレートとターゲットレートを比較し、推奨レプリカ数を算出。クラスタ全体のCPU余裕率が低い場合、スケールアウトを抑制する。
-  * **Output:** サービスごとの推奨レプリカ数（Scaling Actions）。
 
 ## 5. 数理モデル (Mathematical Model / QUBO)
 
