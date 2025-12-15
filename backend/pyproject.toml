@@ -1,0 +1,15 @@
+[project]
+name = "kytos-orchestration"
+version = "0.1.0"
+description = "Add your description here"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.124.4",
+    "jijmodeling>=1.14.1",
+    "ommx-openjij-adapter>=2.3.0",
+    "openjij>=0.11.6",
+    "pydantic>=2.12.5",
+    "typing>=3.10.0.0",
+    "uvicorn>=0.38.0",
+]
