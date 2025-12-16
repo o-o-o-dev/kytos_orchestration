@@ -43,12 +43,15 @@ class ClusterState(BaseModel):
 
 class AnealingSettings(BaseModel):
     load_balance_weight: float = 5.0
-    move_cost_weight: float = 1.0
-    anti_affinity_weight: float = 5.0
-    desire_weight: float = 10.0
-    cpu_limit_weight: float = 1.0
-    mem_limit_weight: float = 1.0
-    one_hot_relaxed_weight: float = 20.0
+    move_cost_weight: float = 1.8
+    move_cost_resource_coeff: float = 0.7
+    anti_affinity_weight: float = 1.0
+    desire_weight: float = 1.0
+    cpu_limit_weight: float = 0.5
+    mem_limit_weight: float = 0.5
+    one_hot_relaxed_weight: float = 50.0
+    cpu_digit_adjustment: float = -1.5
+    mem_digit_adjustment: float = -3
     num_reads: int = 100
 
 

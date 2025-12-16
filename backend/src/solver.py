@@ -31,7 +31,7 @@ def _define_problem() -> jm.Problem:
     anti_affinity_weight = jm.Placeholder(
         "anti_affinity_weight", description="アンチアフィニティの重み"
     )
-    desire_weight = jm.Placeholder("desire_weight", description="配置意欲の重み")
+    # desire_weight = jm.Placeholder("desire_weight", description="配置意欲の重み")
 
     # 現在の配置
     pods = jm.Placeholder("pods", ndim=2, description="ポッドの現在の配置")
@@ -63,39 +63,43 @@ def _define_problem() -> jm.Problem:
         description="同じサービスのPodを分散配置する",
     )
 
-    desire = jm.Placeholder(
-        "desire", shape=(num_pods,), description="Podの作成,削除提案"
-    )
+    # desire = jm.Placeholder(
+    #     "desire", shape=(num_pods,), description="Podの作成,削除提案"
+    # )
 
     # 変数定義
     x = jm.BinaryVar("x", shape=(num_pods, num_nodes), description="PodのNode割り当て")
     p = jm.Element("p", (0, num_pods), description="Podのインデックス")
     n = jm.Element("n", (0, num_nodes), description="Nodeのインデックス")
+    n2 = jm.Element("n2", (0, num_nodes), description="Nodeのインデックス2")
 
     # 制約条件
     # 各Podは最大1つのNodeに割り当てる (Relaxed One-hot制約)
     # desireの値に応じて配置するかどうかを決定するため、必ずしも1つに割り当てる必要はない
-    problem += jm.Constraint("one_hot_relaxed", jm.sum(n, x[p, n]) <= 1, forall=[p])
+    ## 勝手に削除されないように、一旦強制的に1つに割り当てる
+    problem += jm.Constraint("one_hot_relaxed", jm.sum(n, x[p, n]) == 1, forall=[p])
 
     # リソース容量制約 (CPU, Memory)
-    problem += jm.Constraint(
-        "cpu_limit", jm.sum(p, x[p, n] * cpu_req[p]) <= cpu_cap[n], forall=[n]
-    )
-    problem += jm.Constraint(
-        "mem_limit", jm.sum(p, x[p, n] * mem_req[p]) <= mem_cap[n], forall=[n]
-    )
+    # problem += jm.Constraint(
+    #     "cpu_limit", jm.sum(p, x[p, n] * cpu_req[p]) <= cpu_cap[n], forall=[n]
+    # )
+    # problem += jm.Constraint(
+    #     "mem_limit", jm.sum(p, x[p, n] * mem_req[p]) <= mem_cap[n], forall=[n]
+    # )
 
     # 目的関数
     # 負荷分散 (使用率の二乗和の最小化)
     cpu_load = jm.sum(p, x[p, n] * cpu_req[p])
     mem_load = jm.sum(p, x[p, n] * mem_req[p])
+    ideal_cpu_load = jm.sum(p, cpu_req[p]) / jm.sum(n2, cpu_cap[n2]) * cpu_cap[n]
+    ideal_mem_load = jm.sum(p, mem_req[p]) / jm.sum(n2, mem_cap[n2]) * mem_cap[n]
 
     problem += (
         jm.sum(
             n,
-            (cpu_load / cpu_cap[n]) ** 2 + (mem_load / mem_cap[n]) ** 2,
+            (cpu_load - ideal_cpu_load) ** 2 + (mem_load - ideal_mem_load) ** 2,
         )
-        * 10 * load_balance_weight
+        * load_balance_weight
     )
 
     # 移動コスト
@@ -113,7 +117,7 @@ def _define_problem() -> jm.Problem:
     # Desire (配置意欲)
     # desireが高い(1.0)場合は配置することでエネルギーを下げる (-1 * 1.0 * 1 = -1)
     # desireが低い(-1.0)場合は配置するとエネルギーが上がる (-1 * -1.0 * 1 = +1) -> 配置しない(0)方が良い
-    problem += jm.sum(p, -1.0 * desire[p] * jm.sum(n, x[p, n])) * desire_weight
+    # problem += jm.sum(p, -1.0 * desire[p] * jm.sum(n, x[p, n])) * desire_weight
 
     # print(problem._repr_latex_())
 
@@ -126,7 +130,8 @@ def _prepare_data(
     """
     ソルバーに渡すデータを準備します。
     """
-    pods, desires = auto_scale_desired_exsistence(state)
+    # pods, desires = auto_scale_desired_exsistence(state)
+    pods = state.pods
 
     # 移動コストの計算
     m_costs = []
@@ -139,9 +144,14 @@ def _prepare_data(
 
             if pod.current_node != node.id:
                 row.append(
-                    0.5 * pod.priority
-                    + pod.mem_usage * 0.001
-                    + pod.cpu_usage * 0.01
+                    1.0
+                    + 0.3 * pod.priority
+                    + pod.mem_usage
+                    * (10**settings.mem_digit_adjustment)
+                    * settings.move_cost_resource_coeff
+                    + pod.cpu_usage
+                    * (10**settings.cpu_digit_adjustment)
+                    * settings.move_cost_resource_coeff
                 )  # 基本移動コスト
                 continue
 
@@ -176,13 +186,17 @@ def _prepare_data(
             [1 if pod.current_node == node.id else 0 for node in state.nodes]
             for pod in pods
         ],
-        "cpu_req": [p.cpu_usage for p in pods],
-        "mem_req": [p.mem_usage for p in pods],
-        "cpu_cap": [n.cpu_capacity for n in state.nodes],
-        "mem_cap": [n.mem_capacity for n in state.nodes],
+        "cpu_req": [p.cpu_usage * (10**settings.cpu_digit_adjustment) for p in pods],
+        "mem_req": [p.mem_usage * (10**settings.mem_digit_adjustment) for p in pods],
+        "cpu_cap": [
+            n.cpu_capacity * (10**settings.cpu_digit_adjustment) for n in state.nodes
+        ],
+        "mem_cap": [
+            n.mem_capacity * (10**settings.mem_digit_adjustment) for n in state.nodes
+        ],
         "move_cost": m_costs,
         "anti_affinity": affinity_matrix,
-        "desire": desires,
+        # "desire": desires,
     }, pods
 
 
