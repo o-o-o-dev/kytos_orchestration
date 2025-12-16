@@ -1,0 +1,6 @@
+{
+  "name": "kytos-orchestration",
+  "compatibility_date": "2025-12-16",
+  "main": "./.output/server/index.mjs",
+	"vars": { "KYTOS_API_PROXY": "https://api.kytos.o-o-o.dev/**" }
+}

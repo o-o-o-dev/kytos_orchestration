@@ -4,8 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxt/eslint", "@nuxt/ui", "@nuxt/image"],
   routeRules: {
-    // "/api/kytos/**": { proxy: "https://api.kytos.o-o-o.dev/**" },
-    "/api/kytos/**": { proxy: "http://172.17.32.155:8000/**" },
+    "/api/kytos/**": { proxy: process.env.KYTOS_API_PROXY },
   },
   css: ["~/assets/scss/main.scss", "~/assets/css/main.css"],
   vite: {
