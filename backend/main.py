@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
@@ -13,10 +12,8 @@ app = FastAPI(title="Kytos Orchestration API")
 origins = [
     "http://localhost",
     "http://127.0.0.1",
+    "https://kytos.o-o-o.dev",
 ]
-vercel_origin = os.environ.get("FRONTEND_ORIGIN")
-if vercel_origin:
-    origins.append(vercel_origin)
 
 app.add_middleware(
     CORSMiddleware,
