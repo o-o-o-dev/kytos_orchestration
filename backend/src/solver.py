@@ -23,13 +23,13 @@ def _define_problem() -> jm.Problem:
 
     # 重み
     load_balance_weight = jm.Placeholder(
-        "load_balance_weight", description="負荷分散の重み"
+        "loadBalanceWeight", description="負荷分散の重み"
     )
     move_cost_weight = jm.Placeholder(
-        "move_cost_weight", description="移動コストの重み"
+        "moveCostWeight", description="移動コストの重み"
     )
     anti_affinity_weight = jm.Placeholder(
-        "anti_affinity_weight", description="アンチアフィニティの重み"
+        "antiAffinityWeight", description="アンチアフィニティの重み"
     )
     # desire_weight = jm.Placeholder("desire_weight", description="配置意欲の重み")
 
@@ -40,25 +40,25 @@ def _define_problem() -> jm.Problem:
 
     # リソース情報
     cpu_req = jm.Placeholder(
-        "cpu_req", shape=(num_pods,), description="各PodのCPU要求量"
+        "cpuReq", shape=(num_pods,), description="各PodのCPU要求量"
     )
     mem_req = jm.Placeholder(
-        "mem_req", shape=(num_pods,), description="各Podのメモリ要求量"
+        "memReq", shape=(num_pods,), description="各Podのメモリ要求量"
     )
 
     cpu_cap = jm.Placeholder(
-        "cpu_cap", shape=(num_nodes,), description="各NodeのCPU容量"
+        "cpuCap", shape=(num_nodes,), description="各NodeのCPU容量"
     )
     mem_cap = jm.Placeholder(
-        "mem_cap", shape=(num_nodes,), description="各Nodeのメモリ容量"
+        "memCap", shape=(num_nodes,), description="各Nodeのメモリ容量"
     )
 
     move_cost = jm.Placeholder(
-        "move_cost", shape=(num_pods, num_nodes), description="Podの移動コスト"
+        "moveCost", shape=(num_pods, num_nodes), description="Podの移動コスト"
     )
 
     anti_affinity = jm.Placeholder(
-        "anti_affinity",
+        "antiAffinity",
         shape=(num_pods, num_pods),
         description="同じサービスのPodを分散配置する",
     )
@@ -178,24 +178,24 @@ def _prepare_data(
                 affinity_matrix[k][i] = 1.0
 
     return {
-        "load_balance_weight": settings.load_balance_weight,
-        "move_cost_weight": settings.move_cost_weight,
-        "anti_affinity_weight": settings.anti_affinity_weight,
-        "desire_weight": settings.desire_weight,
+        "loadBalanceWeight": settings.load_balance_weight,
+        "moveCostWeight": settings.move_cost_weight,
+        "antiAffinityWeight": settings.anti_affinity_weight,
+        "desireWeight": settings.desire_weight,
         "pods": [
             [1 if pod.current_node == node.id else 0 for node in state.nodes]
             for pod in pods
         ],
-        "cpu_req": [p.cpu_usage * (10**settings.cpu_digit_adjustment) for p in pods],
-        "mem_req": [p.mem_usage * (10**settings.mem_digit_adjustment) for p in pods],
-        "cpu_cap": [
+        "cpuReq": [p.cpu_usage * (10**settings.cpu_digit_adjustment) for p in pods],
+        "memReq": [p.mem_usage * (10**settings.mem_digit_adjustment) for p in pods],
+        "cpuCap": [
             n.cpu_capacity * (10**settings.cpu_digit_adjustment) for n in state.nodes
         ],
-        "mem_cap": [
+        "memCap": [
             n.mem_capacity * (10**settings.mem_digit_adjustment) for n in state.nodes
         ],
-        "move_cost": m_costs,
-        "anti_affinity": affinity_matrix,
+        "moveCost": m_costs,
+        "antiAffinity": affinity_matrix,
         # "desire": desires,
     }, pods
 

@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   routeRules: {
     "/api/kytos/**": { proxy: process.env.KYTOS_API_PROXY },
   },
-  css: ["~/assets/scss/main.scss", "~/assets/css/main.css"],
+  css: ["~/assets/scss/main.scss", "~/assets/css/main.css", "katex/dist/katex.min.css"],
   vite: {
     css: {
       preprocessorOptions: {

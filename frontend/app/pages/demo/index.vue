@@ -489,11 +489,20 @@ const quantumUpdateLines = async () => {
     });
 };
 
+let intervalId: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
-    setInterval(() => {
+    intervalId = setInterval(() => {
         updateNodeUsages();
         quantumUpdateLines();
     }, 5000);
+});
+
+onUnmounted(() => {
+    if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
 });
 </script>
 <template>
